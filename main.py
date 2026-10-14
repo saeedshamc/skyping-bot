@@ -19,12 +19,14 @@ logger = logging.getLogger(__name__)
 BOT_COMMANDS = [
     BotCommand("start", "Welcome and default weather"),
     BotCommand("weather", "Search weather for a city"),
+    BotCommand("forecast", "Multi-day forecast (1–7 days)"),
     BotCommand("add", "Save a city to your list"),
     BotCommand("list", "Show saved cities"),
     BotCommand("remove", "Remove a saved city"),
     BotCommand("all", "Weather for all saved cities"),
     BotCommand("subscribe", "Daily weather for a city"),
     BotCommand("unsubscribe", "Stop daily weather"),
+    BotCommand("alerts", "Rain alerts on/off for saved cities"),
     BotCommand("settime", "Set daily send time (HH:MM)"),
     BotCommand("settimezone", "Set chat timezone"),
     BotCommand("units", "metric or imperial"),
@@ -89,7 +91,9 @@ def main() -> None:
     _configure_logging(settings.log_level)
     application = build_application(settings)
     logger.info("Starting polling…")
-    application.run_polling(allowed_updates=["message", "callback_query"])
+    application.run_polling(
+        allowed_updates=["message", "callback_query", "inline_query"]
+    )
 
 
 if __name__ == "__main__":
