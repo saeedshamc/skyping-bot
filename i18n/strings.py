@@ -20,6 +20,9 @@ _STRINGS: dict[str, dict[str, str]] = {
             "• /add &lt;city&gt; to save it\n"
             "• /list · /remove · /all for your cities\n"
             "• /subscribe &lt;city&gt; for a daily post\n"
+            "• /forecast [1-7] &lt;city&gt; for multi-day outlook\n"
+            "• /alerts on|off — rain alerts for saved cities\n"
+            "• Type @SkyPingBot &lt;city&gt; in any chat (inline)\n"
             "• /language to switch language\n\n"
             "Here is the weather for the default city:"
         ),
@@ -93,6 +96,43 @@ _STRINGS: dict[str, dict[str, str]] = {
         "wmo_unknown": "Unknown",
         "daily_header": "📅 <b>Daily SkyPing forecast</b>",
         "private_only_text": "In groups, please use /weather &lt;city&gt;.",
+        "forecast_header": "📆 <b>{days}-day forecast</b> — {place}",
+        "forecast_usage": (
+            "Usage: <code>/forecast Tehran</code> or "
+            "<code>/forecast 7 Tehran</code> (1–7 days, default 3)"
+        ),
+        "day_today": "Today",
+        "day_tomorrow": "Tomorrow",
+        "weekday_mon": "Mon",
+        "weekday_tue": "Tue",
+        "weekday_wed": "Wed",
+        "weekday_thu": "Thu",
+        "weekday_fri": "Fri",
+        "weekday_sat": "Sat",
+        "weekday_sun": "Sun",
+        "alerts_status_on": (
+            "🌧 Rain alerts are <b>ON</b> (threshold {threshold}%).\n"
+            "SkyPing checks your saved cities during the day."
+        ),
+        "alerts_status_off": (
+            "🌧 Rain alerts are <b>OFF</b>.\n"
+            "Use <code>/alerts on</code> or <code>/alerts on 70</code>."
+        ),
+        "alerts_enabled": "✅ Rain alerts enabled (threshold {threshold}%).",
+        "alerts_disabled": "✅ Rain alerts disabled.",
+        "alerts_usage": (
+            "Usage:\n"
+            "• <code>/alerts</code> — status\n"
+            "• <code>/alerts on</code> — enable\n"
+            "• <code>/alerts on 70</code> — enable with threshold\n"
+            "• <code>/alerts off</code> — disable\n"
+            "• <code>/alerts 60</code> — set threshold only"
+        ),
+        "alerts_need_cities": "Add at least one city with /add before enabling alerts.",
+        "alerts_threshold_invalid": "Threshold must be a number between 1 and 100.",
+        "rain_alert_header": "⚠️ <b>Rain alert</b>",
+        "rain_alert_threshold": "Alert threshold: {threshold}%",
+        "inline_type_city": "Type a city name to get weather…",
     },
     "fa": {
         "welcome": (
@@ -104,6 +144,9 @@ _STRINGS: dict[str, dict[str, str]] = {
             "• /add &lt;شهر&gt; برای ذخیره\n"
             "• /list · /remove · /all برای مدیریت شهرها\n"
             "• /subscribe &lt;شهر&gt; برای پیام روزانه\n"
+            "• /forecast [1-7] &lt;شهر&gt; پیش‌بینی چندروزه\n"
+            "• /alerts on|off — هشدار باران برای شهرهای ذخیره‌شده\n"
+            "• در هر چت: @SkyPingBot &lt;شهر&gt; (حالت اینلاین)\n"
             "• /language برای تغییر زبان\n\n"
             "آب‌وهوای شهر پیش‌فرض:"
         ),
@@ -177,6 +220,43 @@ _STRINGS: dict[str, dict[str, str]] = {
         "wmo_unknown": "نامشخص",
         "daily_header": "📅 <b>پیش‌بینی روزانه SkyPing</b>",
         "private_only_text": "در گروه‌ها لطفاً از /weather &lt;شهر&gt; استفاده کنید.",
+        "forecast_header": "📆 <b>پیش‌بینی {days} روزه</b> — {place}",
+        "forecast_usage": (
+            "نحوه استفاده: <code>/forecast تهران</code> یا "
+            "<code>/forecast 7 تهران</code> (۱ تا ۷ روز، پیش‌فرض ۳)"
+        ),
+        "day_today": "امروز",
+        "day_tomorrow": "فردا",
+        "weekday_mon": "دوشنبه",
+        "weekday_tue": "سه‌شنبه",
+        "weekday_wed": "چهارشنبه",
+        "weekday_thu": "پنجشنبه",
+        "weekday_fri": "جمعه",
+        "weekday_sat": "شنبه",
+        "weekday_sun": "یکشنبه",
+        "alerts_status_on": (
+            "🌧 هشدار باران <b>فعال</b> است (آستانه {threshold}٪).\n"
+            "SkyPing شهرهای ذخیره‌شده شما را در طول روز چک می‌کند."
+        ),
+        "alerts_status_off": (
+            "🌧 هشدار باران <b>خاموش</b> است.\n"
+            "از <code>/alerts on</code> یا <code>/alerts on 70</code> استفاده کنید."
+        ),
+        "alerts_enabled": "✅ هشدار باران فعال شد (آستانه {threshold}٪).",
+        "alerts_disabled": "✅ هشدار باران خاموش شد.",
+        "alerts_usage": (
+            "نحوه استفاده:\n"
+            "• <code>/alerts</code> — وضعیت\n"
+            "• <code>/alerts on</code> — فعال\n"
+            "• <code>/alerts on 70</code> — فعال با آستانه\n"
+            "• <code>/alerts off</code> — خاموش\n"
+            "• <code>/alerts 60</code> — فقط تغییر آستانه"
+        ),
+        "alerts_need_cities": "قبل از فعال‌سازی حداقل یک شهر با /add ذخیره کنید.",
+        "alerts_threshold_invalid": "آستانه باید عددی بین ۱ تا ۱۰۰ باشد.",
+        "rain_alert_header": "⚠️ <b>هشدار باران</b>",
+        "rain_alert_threshold": "آستانه هشدار: {threshold}٪",
+        "inline_type_city": "نام شهر را بنویسید تا آب‌وهوا نمایش داده شود…",
     },
 }
 
