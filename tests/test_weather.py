@@ -10,7 +10,9 @@ from services.cache import weather_cache
 from services.weather import (
     FORECAST_URL,
     WeatherError,
+    fetch_daily_forecast,
     fetch_weather,
+    parse_daily_forecast_response,
     parse_forecast_response,
 )
 
@@ -74,3 +76,47 @@ async def test_fetch_weather_http_error():
     async with httpx.AsyncClient() as client:
         with pytest.raises(WeatherError):
             await fetch_weather(client, 0.0, 0.0, units="metric")
+
+
+def test_parse_daily_forecast_response():
+    payload = {
+        "latitude": 35.7,
+        "longitude": 51.4,
+        "daily_units": {"temperature_2m_max": "°C"},
+        "daily": {
+            "time": ["2026-10-15", "2026-10-16", "2026-10-17"],
+            "weather_code": [2, 61, 0],
+            "temperature_2m_max": [28.0, 22.0, 30.0],
+            "temperature_2m_min": [15.0, 12.0, 14.0],
+            "precipitation_probability_max": [30, 80, 5],
+        },
+    }
+    forecast = parse_daily_forecast_response(payload, "metric")
+    assert len(forecast.days) == 3
+    assert forecast.days[1].weather_code == 61
+    assert forecast.days[1].precip_probability == 80
+    assert forecast.days[0].temp_max == 28.0
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_fetch_daily_forecast_http():
+    payload = {
+        "latitude": 35.7,
+        "longitude": 51.4,
+        "daily_units": {"temperature_2m_max": "°C"},
+        "daily": {
+            "time": ["2026-10-15", "2026-10-16"],
+            "weather_code": [2, 3],
+            "temperature_2m_max": [28.0, 26.0],
+            "temperature_2m_min": [15.0, 14.0],
+            "precipitation_probability_max": [20, 40],
+        },
+    }
+    respx.get(FORECAST_URL).mock(return_value=httpx.Response(200, json=payload))
+    async with httpx.AsyncClient() as client:
+        forecast = await fetch_daily_forecast(
+            client, 35.7, 51.4, days=2, units="metric"
+        )
+    assert len(forecast.days) == 2
+    assert forecast.days[0].temp_min == 15.0

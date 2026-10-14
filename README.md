@@ -7,7 +7,10 @@ Search cities, save favourites, get multi-city snapshots, and schedule daily pos
 
 - Instant weather on `/start` for a configurable default city
 - City search with up to 5 geocoding matches (EN / FA names)
+- Multi-day forecast (`/forecast 3 Tehran`, up to 7 days)
 - Personal city list: `/add`, `/list`, `/remove`, `/all`
+- Rain alerts for saved cities (`/alerts on`)
+- Inline mode: type `@YourBot city` in any chat
 - Daily subscriptions with per-chat time & timezone
 - Metric / imperial units
 - Bilingual UI — change language anytime with `/language` or the buttons under `/start`
@@ -28,6 +31,7 @@ Search cities, save favourites, get multi-city snapshots, and schedule daily pos
 1. Open Telegram and talk to [@BotFather](https://t.me/BotFather)
 2. Send `/newbot` and follow the prompts
 3. Copy the **bot token** into `.env` as `BOT_TOKEN`
+4. Enable inline mode: `/setinline` → choose your bot → set a placeholder like `city name`
 
 ### 2. Getting chat / channel IDs
 
@@ -59,6 +63,7 @@ Search cities, save favourites, get multi-city snapshots, and schedule daily pos
 | `DEFAULT_SEND_TIME` | Default daily time `HH:MM` | `07:30` |
 | `DEFAULT_LANGUAGE` | `en` or `fa` | `en` |
 | `MAX_CITIES_PER_USER` | Cap on saved cities | `10` |
+| `DEFAULT_RAIN_THRESHOLD` | Default precip % for rain alerts | `60` |
 | `CHANNEL_IDS` | Comma-separated channel IDs/usernames | _(empty)_ |
 | `CHANNEL_CITIES` | `Name:lat:lon,...` for channel posts | _(empty)_ |
 | `DB_PATH` | SQLite file path | `storage/skyping.db` |
@@ -108,18 +113,21 @@ SQLite data is stored in the `./storage` volume.
 | ------- | ----------- |
 | `/start` | Welcome, language buttons, default weather |
 | `/weather <city>` | Search and show weather |
+| `/forecast [1-7] <city>` | Multi-day forecast (default 3 days) |
 | `/add <city>` | Save a city |
 | `/list` | Saved cities (tap for weather) |
 | `/remove` | Remove a saved city |
 | `/all` | Weather for every saved city |
 | `/subscribe <city>` | Daily post for that city |
 | `/unsubscribe` | Stop a daily subscription |
+| `/alerts on\|off` | Rain alerts for saved cities |
 | `/settime HH:MM` | Daily send time (chat timezone) |
 | `/settimezone <IANA>` | e.g. `Asia/Tehran` |
 | `/units metric\|imperial` | Unit preference |
 | `/language` | Switch English / فارسی |
 
-In private chats you can also send a plain city name (no command).
+In private chats you can also send a plain city name (no command).  
+Inline: type `@YourBot Tehran` in any chat (enable `/setinline` in BotFather first).
 
 ## Tests
 

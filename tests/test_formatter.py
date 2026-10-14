@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from services.formatter import (
+    format_daily_forecast,
+    format_inline_description,
     format_multi_weather,
+    format_rain_alert,
     format_weather_block,
     wmo_to_emoji_and_text,
 )
-from services.weather import Weather
+from services.weather import DailyForecast, DailyForecastDay, Weather
 
 
 def _sample_weather(**overrides) -> Weather:
@@ -96,3 +99,39 @@ def test_persian_rtl_mark_present():
     )
     assert "\u200f" in block
     assert "تهران" in block
+
+
+def test_format_daily_forecast():
+    forecast = DailyForecast(
+        latitude=35.7,
+        longitude=51.4,
+        units="metric",
+        temperature_unit="°C",
+        days=(
+            DailyForecastDay("2099-01-01", 2, 10.0, 20.0, 30),
+            DailyForecastDay("2099-01-02", 61, 8.0, 15.0, 80),
+        ),
+    )
+    text = format_daily_forecast(forecast, name="Tehran", country_code="IR", lang="en")
+    assert "Tehran" in text
+    assert "2-day forecast" in text
+    assert "10/20" in text
+    assert "80%" in text
+
+
+def test_format_rain_alert():
+    text = format_rain_alert(
+        place="Tehran, Iran 🇮🇷",
+        precip_probability=75,
+        threshold=60,
+        lang="en",
+    )
+    assert "Rain alert" in text
+    assert "75%" in text
+    assert "60%" in text
+
+
+def test_format_inline_description():
+    desc = format_inline_description(_sample_weather(), "en")
+    assert "22" in desc
+    assert "Partly cloudy" in desc
