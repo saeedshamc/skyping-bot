@@ -18,7 +18,6 @@ dist/
 build/
 *.egg-info/
 .DS_Store
-storage/
 *.log
 .idea/
 .vscode/

@@ -1,0 +1,11 @@
+services:
+  skyping:
+    build: .
+    container_name: skyping-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./storage:/app/storage
+    environment:
+      DB_PATH: /app/storage/skyping.db
