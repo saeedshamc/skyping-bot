@@ -23,6 +23,9 @@ class ChatRecord:
     language: str
     active: bool
     last_sent_date: str | None
+    rain_alerts: bool = False
+    rain_threshold: int = 60
+    last_rain_alert_date: str | None = None
 
 
 @dataclass
@@ -40,6 +43,7 @@ class CityRecord:
 
 
 def _chat_from_row(row: Any) -> ChatRecord:
+    keys = set(row.keys())
     return ChatRecord(
         chat_id=row["chat_id"],
         chat_type=row["chat_type"],
@@ -49,6 +53,11 @@ def _chat_from_row(row: Any) -> ChatRecord:
         language=row["language"],
         active=bool(row["active"]),
         last_sent_date=row["last_sent_date"],
+        rain_alerts=bool(row["rain_alerts"]) if "rain_alerts" in keys else False,
+        rain_threshold=int(row["rain_threshold"]) if "rain_threshold" in keys else 60,
+        last_rain_alert_date=(
+            row["last_rain_alert_date"] if "last_rain_alert_date" in keys else None
+        ),
     )
 
 
@@ -297,6 +306,52 @@ async def list_due_chats() -> list[ChatRecord]:
         INNER JOIN subscriptions s ON s.chat_id = c.chat_id
         WHERE c.active = 1
         """
+    ) as cur:
+        rows = await cur.fetchall()
+    return [_chat_from_row(r) for r in rows]
+
+
+async def set_rain_alerts(
+    chat_id: int,
+    *,
+    enabled: bool | None = None,
+    threshold: int | None = None,
+) -> None:
+    """Update rain-alert preferences for a chat."""
+    db = get_db()
+    if enabled is not None and threshold is not None:
+        await db.execute(
+            "UPDATE chats SET rain_alerts = ?, rain_threshold = ? WHERE chat_id = ?",
+            (1 if enabled else 0, threshold, chat_id),
+        )
+    elif enabled is not None:
+        await db.execute(
+            "UPDATE chats SET rain_alerts = ? WHERE chat_id = ?",
+            (1 if enabled else 0, chat_id),
+        )
+    elif threshold is not None:
+        await db.execute(
+            "UPDATE chats SET rain_threshold = ? WHERE chat_id = ?",
+            (threshold, chat_id),
+        )
+    await db.commit()
+
+
+async def set_last_rain_alert_date(chat_id: int, date_str: str) -> None:
+    """Record the local date of the last rain alert."""
+    db = get_db()
+    await db.execute(
+        "UPDATE chats SET last_rain_alert_date = ? WHERE chat_id = ?",
+        (date_str, chat_id),
+    )
+    await db.commit()
+
+
+async def list_rain_alert_chats() -> list[ChatRecord]:
+    """Return chats with rain alerts enabled."""
+    db = get_db()
+    async with db.execute(
+        "SELECT * FROM chats WHERE rain_alerts = 1 AND active = 1"
     ) as cur:
         rows = await cur.fetchall()
     return [_chat_from_row(r) for r in rows]

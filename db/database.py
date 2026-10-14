@@ -13,14 +13,17 @@ _db: aiosqlite.Connection | None = None
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS chats (
-    chat_id        INTEGER PRIMARY KEY,
-    chat_type      TEXT    NOT NULL,
-    units          TEXT    NOT NULL DEFAULT 'metric',
-    timezone       TEXT    NOT NULL,
-    send_time      TEXT    NOT NULL,
-    language       TEXT    NOT NULL DEFAULT 'en',
-    active         INTEGER NOT NULL DEFAULT 1,
-    last_sent_date TEXT
+    chat_id               INTEGER PRIMARY KEY,
+    chat_type             TEXT    NOT NULL,
+    units                 TEXT    NOT NULL DEFAULT 'metric',
+    timezone              TEXT    NOT NULL,
+    send_time             TEXT    NOT NULL,
+    language              TEXT    NOT NULL DEFAULT 'en',
+    active                INTEGER NOT NULL DEFAULT 1,
+    last_sent_date        TEXT,
+    rain_alerts           INTEGER NOT NULL DEFAULT 0,
+    rain_threshold        INTEGER NOT NULL DEFAULT 60,
+    last_rain_alert_date  TEXT
 );
 
 CREATE TABLE IF NOT EXISTS saved_cities (
@@ -68,11 +71,19 @@ async def _migrate(conn: aiosqlite.Connection) -> None:
     """Apply lightweight additive migrations for existing databases."""
     async with conn.execute("PRAGMA table_info(chats)") as cursor:
         columns = {row["name"] for row in await cursor.fetchall()}
-    if "language" not in columns:
-        await conn.execute(
-            "ALTER TABLE chats ADD COLUMN language TEXT NOT NULL DEFAULT 'en'"
-        )
-        logger.info("Migrated chats table: added language column")
+    migrations = [
+        ("language", "ALTER TABLE chats ADD COLUMN language TEXT NOT NULL DEFAULT 'en'"),
+        ("rain_alerts", "ALTER TABLE chats ADD COLUMN rain_alerts INTEGER NOT NULL DEFAULT 0"),
+        (
+            "rain_threshold",
+            "ALTER TABLE chats ADD COLUMN rain_threshold INTEGER NOT NULL DEFAULT 60",
+        ),
+        ("last_rain_alert_date", "ALTER TABLE chats ADD COLUMN last_rain_alert_date TEXT"),
+    ]
+    for name, sql in migrations:
+        if name not in columns:
+            await conn.execute(sql)
+            logger.info("Migrated chats table: added %s column", name)
 
 
 def get_db() -> aiosqlite.Connection:

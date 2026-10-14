@@ -37,6 +37,7 @@ class Settings:
     default_send_time: str
     default_language: str
     max_cities_per_user: int
+    default_rain_threshold: int = 60
     channel_ids: list[int | str] = field(default_factory=list)
     channel_cities: list[ChannelCity] = field(default_factory=list)
     db_path: Path = Path("storage/skyping.db")
@@ -63,14 +64,16 @@ def _parse_float(name: str, default: str | None = None) -> float:
         raise SystemExit(f"Invalid float for {name}: {raw!r}") from exc
 
 
-def _parse_int(name: str, default: str) -> int:
+def _parse_int(name: str, default: str, *, minimum: int = 1, maximum: int | None = None) -> int:
     raw = os.getenv(name, default).strip()
     try:
         value = int(raw)
     except ValueError as exc:
         raise SystemExit(f"Invalid integer for {name}: {raw!r}") from exc
-    if value < 1:
-        raise SystemExit(f"{name} must be >= 1, got {value}.")
+    if value < minimum:
+        raise SystemExit(f"{name} must be >= {minimum}, got {value}.")
+    if maximum is not None and value > maximum:
+        raise SystemExit(f"{name} must be <= {maximum}, got {value}.")
     return value
 
 
@@ -154,6 +157,9 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
         default_send_time=send_time,
         default_language=language,
         max_cities_per_user=_parse_int("MAX_CITIES_PER_USER", "10"),
+        default_rain_threshold=_parse_int(
+            "DEFAULT_RAIN_THRESHOLD", "60", minimum=1, maximum=100
+        ),
         channel_ids=_parse_channel_ids(os.getenv("CHANNEL_IDS", "")),
         channel_cities=_parse_channel_cities(os.getenv("CHANNEL_CITIES", "")),
         db_path=db_path,

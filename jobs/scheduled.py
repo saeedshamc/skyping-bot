@@ -14,8 +14,13 @@ from telegram.ext import Application, ContextTypes
 from config import ChannelCity, Settings
 from db import repository as repo
 from i18n.strings import t
-from services.formatter import format_multi_weather, format_weather_block
+from services.formatter import (
+    format_multi_weather,
+    format_rain_alert,
+    format_weather_block,
+)
 from services.weather import WeatherError, fetch_weather
+from utils.helpers import format_place
 
 logger = logging.getLogger(__name__)
 
@@ -205,6 +210,62 @@ async def send_channel_daily(context: ContextTypes.DEFAULT_TYPE) -> None:
         context.application.bot_data[sent_key] = today
 
 
+async def check_rain_alerts(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Notify chats when today's precip chance exceeds their threshold."""
+    client = context.application.bot_data["http_client"]
+    chats = await repo.list_rain_alert_chats()
+    for chat in chats:
+        now = _local_now(chat.timezone)
+        if now is None:
+            continue
+        today = now.date().isoformat()
+        if chat.last_rain_alert_date == today:
+            continue
+
+        # Morning–evening window so we don't alert at midnight with stale odds.
+        if now.hour < 6 or now.hour > 21:
+            continue
+
+        cities = await repo.list_saved_cities(chat.chat_id)
+        if not cities:
+            continue
+
+        alert_blocks: list[str] = []
+        for city in cities:
+            try:
+                weather = await fetch_weather(
+                    client, city.latitude, city.longitude, units=chat.units
+                )
+            except WeatherError:
+                continue
+            precip = weather.precip_probability
+            if precip is None or precip < chat.rain_threshold:
+                continue
+            place = format_place(
+                city.name, city.admin1, city.country, city.country_code
+            )
+            alert_blocks.append(
+                format_rain_alert(
+                    place=place,
+                    precip_probability=precip,
+                    threshold=chat.rain_threshold,
+                    lang=chat.language,
+                )
+            )
+
+        if not alert_blocks:
+            continue
+
+        text = "\n\n".join(alert_blocks)
+        if len(text) > 4000:
+            text = text[:3990] + "…"
+
+        ok = await _send_or_deactivate(context.bot, chat.chat_id, text)
+        if ok:
+            await repo.set_last_rain_alert_date(chat.chat_id, today)
+            logger.info("Sent rain alert to chat %s", chat.chat_id)
+
+
 def register_jobs(application: Application) -> None:
     """Schedule the per-minute checker (survives restarts via DB state)."""
     jq = application.job_queue
@@ -215,4 +276,5 @@ def register_jobs(application: Application) -> None:
         return
     jq.run_repeating(check_and_send_daily, interval=60, first=10, name="daily_chats")
     jq.run_repeating(send_channel_daily, interval=60, first=15, name="daily_channels")
-    logger.info("Scheduled daily weather jobs")
+    jq.run_repeating(check_rain_alerts, interval=30 * 60, first=45, name="rain_alerts")
+    logger.info("Scheduled daily weather and rain-alert jobs")
